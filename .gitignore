@@ -1,0 +1,6 @@
+.env
+data/*.json
+!data/.gitkeep
+impressor/config.json
+impressor/estado_local.json
+impressor/impressao.log
