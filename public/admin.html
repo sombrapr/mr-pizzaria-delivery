@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MR Pizzaria — Central de Delivery</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="login" class="login-screen">
+    <form id="loginForm" class="login-card">
+      <div class="logo big">MR</div>
+      <h1>Central de Delivery</h1>
+      <p>Entre com a senha administrativa configurada no servidor.</p>
+      <label>Senha do painel
+        <input id="adminKey" type="password" autocomplete="current-password" required>
+      </label>
+      <button class="btn primary" type="submit">Entrar</button>
+      <small id="loginError" class="error"></small>
+    </form>
+  </div>
+
+  <header class="topbar">
+    <div class="brand"><div class="logo">MR</div><div><strong>MR Pizzaria</strong><span>Central de Delivery</span></div></div>
+    <div class="header-actions">
+      <span id="syncStatus" class="sync">Conectando…</span>
+      <button id="logoutBtn" class="btn ghost small">Sair</button>
+    </div>
+  </header>
+
+  <nav class="main-nav">
+    <button class="nav-btn active" data-view="dashboard">Pedidos</button>
+    <button class="nav-btn" data-view="newOrder">Novo pedido</button>
+    <button class="nav-btn" data-view="customers">Clientes</button>
+    <button class="nav-btn" data-view="reports">Relatórios</button>
+  </nav>
+
+  <main>
+    <section id="dashboard" class="view active">
+      <div class="section-head">
+        <div><h1>Pedidos em andamento</h1><p>Atualização automática a cada quatro segundos.</p></div>
+        <div class="toolbar">
+          <input id="orderSearch" class="search" placeholder="Buscar cliente, telefone ou pedido">
+          <button id="refreshBtn" class="btn secondary">Atualizar</button>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <article><span>Novos</span><strong id="kpiNew">0</strong></article>
+        <article><span>Em produção</span><strong id="kpiProduction">0</strong></article>
+        <article><span>Prontos/entrega</span><strong id="kpiReady">0</strong></article>
+        <article><span>Vendas de hoje</span><strong id="kpiSales">R$ 0,00</strong></article>
+      </div>
+
+      <div id="kanban" class="kanban"></div>
+
+      <details class="finished-wrap">
+        <summary>Pedidos finalizados e cancelados</summary>
+        <div id="finishedOrders" class="finished-grid"></div>
+      </details>
+    </section>
+
+    <section id="newOrder" class="view">
+      <div class="section-head"><div><h1>Novo pedido</h1><p>Para telefone, balcão, WhatsApp ou retirada.</p></div></div>
+      <form id="orderForm" class="order-layout">
+        <div class="stack">
+          <article class="panel">
+            <h2>Cliente e atendimento</h2>
+            <div class="form-grid">
+              <label>Nome<input id="customerName" required></label>
+              <label>WhatsApp/telefone<input id="customerPhone" inputmode="tel" required></label>
+              <label>Origem
+                <select id="source">
+                  <option value="BALCAO">Balcão/telefone</option>
+                  <option value="WHATSAPP">WhatsApp</option>
+                  <option value="SITE">Site</option>
+                </select>
+              </label>
+              <label>Atendimento
+                <select id="serviceType">
+                  <option value="DELIVERY">Entrega</option>
+                  <option value="PICKUP">Retirada</option>
+                </select>
+              </label>
+            </div>
+            <div id="addressFields" class="form-grid address-grid">
+              <label class="wide">Rua<input id="street"></label>
+              <label>Número<input id="streetNumber"></label>
+              <label>Bairro<input id="district"></label>
+              <label class="wide">Ponto de referência<input id="reference"></label>
+            </div>
+          </article>
+
+          <article class="panel">
+            <h2>Pizza</h2>
+            <div class="form-grid pizza-grid">
+              <label>Tamanho
+                <select id="pizzaSize"><option value="P">Pequena</option><option value="M">Média</option><option value="G" selected>Grande</option></select>
+              </label>
+              <label>Primeiro sabor<select id="flavor1"></select></label>
+              <label id="flavor2Wrap">Segundo sabor<select id="flavor2"><option value="">Pizza inteira</option></select></label>
+              <label>Borda<select id="border"></select></label>
+              <label>Quantidade<input id="pizzaQty" type="number" min="1" value="1"></label>
+              <label class="wide">Observação<input id="pizzaNote" placeholder="Ex.: sem cebola, massa bem assada"></label>
+            </div>
+            <div class="toolbar between"><strong id="pizzaPrice">R$ 0,00</strong><button id="addPizzaBtn" type="button" class="btn primary">Adicionar pizza</button></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-title"><h2>Outros produtos</h2><input id="productSearch" class="search" placeholder="Buscar item"></div>
+            <div id="categoryTabs" class="category-tabs"></div>
+            <div id="productList" class="product-grid"></div>
+          </article>
+        </div>
+
+        <aside class="panel cart-panel">
+          <h2>Resumo do pedido</h2>
+          <div id="cartItems" class="cart-items"></div>
+          <div class="totals">
+            <div><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
+            <div><span>Entrega</span><strong id="deliveryFee">R$ 0,00</strong></div>
+            <div class="grand"><span>Total</span><strong id="total">R$ 0,00</strong></div>
+          </div>
+          <label>Pagamento
+            <select id="paymentMethod"><option>Pix</option><option>Dinheiro</option><option>Cartão na entrega</option><option>Cartão no balcão</option><option>Não informado</option></select>
+          </label>
+          <label id="changeWrap" class="hidden">Troco para<input id="changeFor" type="number" min="0" step="0.01"></label>
+          <label>Observação geral<textarea id="orderNote"></textarea></label>
+          <button class="btn success full" type="submit">Confirmar pedido</button>
+          <button id="clearCartBtn" class="btn ghost full" type="button">Limpar</button>
+        </aside>
+      </form>
+    </section>
+
+    <section id="customers" class="view">
+      <div class="section-head"><div><h1>Clientes</h1><p>Histórico criado automaticamente pelos pedidos.</p></div><input id="customerSearch" class="search" placeholder="Buscar cliente ou telefone"></div>
+      <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Telefone</th><th>Pedidos</th><th>Total gasto</th><th>Última compra</th><th>Endereços</th></tr></thead><tbody id="customerRows"></tbody></table></div>
+    </section>
+
+    <section id="reports" class="view">
+      <div class="section-head"><div><h1>Relatório diário</h1><p>Vendas, ticket médio, origem e produtos.</p></div><input id="reportDate" type="date"></div>
+      <div class="kpis report-kpis">
+        <article><span>Pedidos</span><strong id="reportOrders">0</strong></article>
+        <article><span>Faturamento</span><strong id="reportRevenue">R$ 0,00</strong></article>
+        <article><span>Ticket médio</span><strong id="reportTicket">R$ 0,00</strong></article>
+        <article><span>WhatsApp</span><strong id="reportWhatsapp">0</strong></article>
+      </div>
+      <article class="panel"><h2>Itens mais vendidos</h2><div id="topItems" class="ranking"></div></article>
+      <article class="panel import-panel">
+        <h2>Importar histórico antigo</h2>
+        <p>Use o arquivo JSON exportado pelo painel antigo que salvava os pedidos neste computador.</p>
+        <input id="importFile" type="file" accept="application/json,.json">
+        <button id="importBtn" class="btn secondary" type="button">Importar pedidos</button>
+      </article>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="/admin.js" defer></script>
+</body>
+</html>
