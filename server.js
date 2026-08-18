@@ -1090,58 +1090,101 @@ async function createPagarmePaymentLink(order) {
   const isPix = normalize(order.payment) === normalize("Pix online");
   const isCard = normalize(order.payment) === normalize("Cartão de crédito online");
   if (!isPix && !isCard) throw new Error("Forma de pagamento online inválida.");
-  const paymentSettings = { accepted_payment_methods: [isPix ? "pix" : "credit_card"] };
-  // A referência atual do Checkout Pagar.me exige pix_settings quando "pix"
-  // é enviado em accepted_payment_methods. Mesmo sem customizações, o objeto
-  // precisa existir para que o link de pagamento Pix seja criado.
-  if (isPix) {
-    paymentSettings.pix_settings = {};
-  }
-  if (isCard) {
-    paymentSettings.credit_card_settings = {
-      operation_type: "auth_and_capture",
-      installments: [{ number: 1, total: totalCents }]
-    };
-  }
-  const payload = {
+
+  const buildPaymentSettings = (includePixSettings = true) => {
+    const settings = { accepted_payment_methods: [isPix ? "pix" : "credit_card"] };
+    if (isPix && includePixSettings) {
+      // O SDK oficial do Pagar.me expõe expires_in dentro da configuração
+      // específica do Pix. Aqui usamos a mesma validade do link, convertida
+      // para segundos para o QR Code Pix.
+      settings.pix_settings = {
+        expires_in: PAGARME_PAYMENT_LINK_EXPIRES_MINUTES * 60
+      };
+    }
+    if (isCard) {
+      settings.credit_card_settings = {
+        operation_type: "auth_and_capture",
+        installments: [{ number: 1, total: totalCents }]
+      };
+    }
+    return settings;
+  };
+
+  const basePayload = {
     is_building: false,
     name: `MR Pizzaria pedido ${order.number}`.slice(0, 64),
     order_code: pagarmeOrderCode(order.number),
     type: "order",
     expires_in: PAGARME_PAYMENT_LINK_EXPIRES_MINUTES,
     max_paid_sessions: 1,
-    payment_settings: paymentSettings,
     cart_settings: { items: pagarmeCartItems(order) }
   };
-  if (!payload.cart_settings.items.length) throw new Error("O pedido não possui itens cobrados para gerar o pagamento.");
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-  try {
-    const response = await fetch(`${PAGARME_BASE_URL}/paymentlinks`, {
-      method: "POST",
-      headers: {
-        Authorization: pagarmeBasicAuthHeader(),
-        "Content-Type": "application/json",
-        "User-Agent": "pagarme-skill-generated/1.0"
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data?.url || !data?.id) {
-      const message = pagarmeErrorMessage(data, `HTTP ${response.status}`);
-      console.error("Pagar.me: falha ao criar checkout", { status: response.status, orderNumber: order.number, paymentMethod: isPix ? "pix" : "credit_card", error: message });
-      throw new Error(`Não foi possível abrir o pagamento online (${String(message).slice(0, 180)}).`);
+  if (!basePayload.cart_settings.items.length) throw new Error("O pedido não possui itens cobrados para gerar o pagamento.");
+
+  async function requestPaymentLink(includePixSettings = true) {
+    const payload = { ...basePayload, payment_settings: buildPaymentSettings(includePixSettings) };
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await fetch(`${PAGARME_BASE_URL}/paymentlinks`, {
+        method: "POST",
+        headers: {
+          Authorization: pagarmeBasicAuthHeader(),
+          "Content-Type": "application/json",
+          "User-Agent": "pagarme-skill-generated/1.0"
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      const raw = await response.text().catch(() => "");
+      let data = {};
+      if (raw) {
+        try { data = JSON.parse(raw); } catch (_) { data = {}; }
+      }
+      const message = pagarmeErrorMessage(data, raw.trim() || `HTTP ${response.status}`);
+      return { response, data, raw, message, payload };
+    } finally {
+      clearTimeout(timeout);
     }
-    console.log("Pagar.me: checkout criado", { orderNumber: order.number, paymentLinkId: data.id, test: PAGARME_TEST_MODE });
+  }
+
+  try {
+    let result = await requestPaymentLink(true);
+
+    // Há uma inconsistência entre páginas atuais da documentação do Checkout:
+    // uma descreve pix_settings como obrigatório, enquanto o guia de integração
+    // por IA mostra o Pix apenas em accepted_payment_methods. Para suportar as
+    // duas variantes do backend, se a forma com pix_settings for rejeitada com
+    // HTTP 400, fazemos uma única tentativa no formato simplificado oficial.
+    if (isPix && result.response.status === 400) {
+      console.warn("Pagar.me Pix: primeira tentativa recusada; tentando formato simplificado", {
+        orderNumber: order.number,
+        status: result.response.status,
+        error: String(result.message || "").slice(0, 600),
+        responseBody: String(result.raw || "").slice(0, 1200)
+      });
+      result = await requestPaymentLink(false);
+    }
+
+    const { response, data, raw, message } = result;
+    if (!response.ok || !data?.url || !data?.id) {
+      console.error("Pagar.me: falha ao criar checkout", {
+        status: response.status,
+        orderNumber: order.number,
+        paymentMethod: isPix ? "pix" : "credit_card",
+        error: String(message || `HTTP ${response.status}`).slice(0, 1000),
+        responseBody: String(raw || "").slice(0, 1600)
+      });
+      throw new Error(`Não foi possível abrir o pagamento online (${String(message || `HTTP ${response.status}`).slice(0, 180)}).`);
+    }
+    console.log("Pagar.me: checkout criado", { orderNumber: order.number, paymentLinkId: data.id, test: PAGARME_TEST_MODE, paymentMethod: isPix ? "pix" : "credit_card" });
     return { id: String(data.id), url: String(data.url), status: String(data.status || "active") };
   } catch (error) {
     if (error?.name === "AbortError") throw new Error("O Pagar.me demorou para responder. Tente novamente.");
     throw error;
-  } finally {
-    clearTimeout(timeout);
   }
 }
+
 async function updateOrderPaymentState(number, patch = {}) {
   const orderNumber = Number(number);
   if (!Number.isFinite(orderNumber)) return null;
@@ -3638,7 +3681,7 @@ app.post("/api/site/orders", async (req, res) => {
 });
 
 
-app.get("/", (_req, res) => res.status(200).send("Webhook da MR Pizzaria está online — versão 6.4.3."));
+app.get("/", (_req, res) => res.status(200).send("Webhook da MR Pizzaria está online — versão 6.4.4."));
 
 app.get("/api/site/orders/:number/payment-status", async (req, res) => {
   try {
@@ -3680,7 +3723,7 @@ app.get("/api/site/orders/:number/payment-events", async (req, res) => {
 app.get("/health", async (_req, res) => {
   try {
     const [orders, reservations, requests] = await Promise.all([listOrders({ limit: 1000 }), listReservations({ limit: 1000 }), listServiceRequests({ limit: 1000 })]);
-    res.json({ ok: true, version: "6.4.3", testMode: TEST_MODE, storage: storageMode(), sessions: sessions.size, orders: orders.length, reservations: reservations.length, serviceRequests: requests.length, pagarme: { enabled: PAGARME_ENABLED, environment: PAGARME_TEST_MODE ? "test" : "production", webhookProtected: Boolean(PAGARME_WEBHOOK_TOKEN) } });
+    res.json({ ok: true, version: "6.4.4", testMode: TEST_MODE, storage: storageMode(), sessions: sessions.size, orders: orders.length, reservations: reservations.length, serviceRequests: requests.length, pagarme: { enabled: PAGARME_ENABLED, environment: PAGARME_TEST_MODE ? "test" : "production", webhookProtected: Boolean(PAGARME_WEBHOOK_TOKEN) } });
   } catch (error) {
     res.status(500).json({ ok: false, storage: storageMode(), error: error.message });
   }

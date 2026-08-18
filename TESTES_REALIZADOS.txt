@@ -106,3 +106,6 @@ Validação v6.4.0 — Pagar.me Checkout (18/08/2026):
 
 [v6.4.3] Pix Pagar.me: payload agora inclui payment_settings.pix_settings={} quando accepted_payment_methods=["pix"].
 [v6.4.3] Erros Pagar.me: parser ampliado para arrays/objetos de validação sem expor credenciais.
+
+[v6.4.4] Pix: pix_settings.expires_in configurado e fallback de compatibilidade para formato simplificado.
+[v6.4.4] Pagar.me: log de erro inclui responseBody bruto limitado a 1600 caracteres, sem credenciais.

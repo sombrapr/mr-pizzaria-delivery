@@ -1,7 +1,7 @@
-# MR Pizzaria — WhatsApp + Mesas v6.4.3
+# MR Pizzaria — WhatsApp + Mesas v6.4.4
 
 
-## v6.4.3 — correção do Checkout Pix Pagar.me
+## v6.4.4 — compatibilidade e diagnóstico do Checkout Pix Pagar.me
 
 - Corrige a criação do link de pagamento quando a forma escolhida é **Pix online**.
 - Envia `payment_settings.pix_settings` junto de `accepted_payment_methods: ["pix"]`, conforme a referência atual do Checkout Pagar.me.
@@ -260,3 +260,9 @@ Antes da produção, troque a Secret Key e a base URL para produção e mantenha
 - A tela da MR Pizzaria recebe a confirmação de pagamento em tempo real via Server-Sent Events (SSE), com polling como fallback.
 - Assim que o webhook marcar o pedido como pago, a aba/janela do checkout aberta pelo site é fechada pelo navegador quando permitido e a tela da pizzaria mostra “Pagamento aprovado”.
 - Se o navegador bloquear o fechamento automático, a aba original da MR Pizzaria já fica atualizada e pronta para o cliente retornar.
+
+
+### Ajustes v6.4.4
+- Pix passa a enviar `pix_settings.expires_in` com validade do QR Code.
+- Em HTTP 400 no Pix, faz uma tentativa compatível com o formato simplificado documentado pelo Pagar.me.
+- Logs do Render agora exibem o corpo bruto da resposta do Pagar.me (sem expor a chave secreta), facilitando o diagnóstico.
