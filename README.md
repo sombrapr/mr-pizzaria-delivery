@@ -1,4 +1,12 @@
-# MR Pizzaria — WhatsApp + Mesas v6.4.2
+# MR Pizzaria — WhatsApp + Mesas v6.4.3
+
+
+## v6.4.3 — correção do Checkout Pix Pagar.me
+
+- Corrige a criação do link de pagamento quando a forma escolhida é **Pix online**.
+- Envia `payment_settings.pix_settings` junto de `accepted_payment_methods: ["pix"]`, conforme a referência atual do Checkout Pagar.me.
+- Melhora o detalhamento de erros retornados pela API para facilitar diagnóstico no Render.
+- Mantém intacto o fluxo de cartão online que já estava funcionando.
 
 Sistema integrado para atendimento por WhatsApp, pedidos pelo site e atendimento no salão.
 

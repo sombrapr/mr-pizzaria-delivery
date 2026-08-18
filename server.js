@@ -1063,6 +1063,27 @@ function pagarmeCartItems(order) {
   }
   return items;
 }
+function pagarmeErrorMessage(data, fallback) {
+  const direct = data?.message || data?.error_description || data?.error;
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const errors = data?.errors;
+  if (Array.isArray(errors)) {
+    const parts = errors.flatMap((entry) => {
+      if (typeof entry === "string") return [entry];
+      if (entry && typeof entry === "object") return Object.entries(entry).map(([k,v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`);
+      return [];
+    }).filter(Boolean);
+    if (parts.length) return parts.join(" | ");
+  }
+  if (errors && typeof errors === "object") {
+    const parts = Object.entries(errors).flatMap(([field, value]) => {
+      if (Array.isArray(value)) return value.map(v => `${field}: ${typeof v === "string" ? v : JSON.stringify(v)}`);
+      return [`${field}: ${typeof value === "string" ? value : JSON.stringify(value)}`];
+    }).filter(Boolean);
+    if (parts.length) return parts.join(" | ");
+  }
+  return fallback;
+}
 async function createPagarmePaymentLink(order) {
   if (!PAGARME_ENABLED) throw new Error("Pagamento online ainda não está configurado.");
   const totalCents = cents(order.total);
@@ -1070,6 +1091,12 @@ async function createPagarmePaymentLink(order) {
   const isCard = normalize(order.payment) === normalize("Cartão de crédito online");
   if (!isPix && !isCard) throw new Error("Forma de pagamento online inválida.");
   const paymentSettings = { accepted_payment_methods: [isPix ? "pix" : "credit_card"] };
+  // A referência atual do Checkout Pagar.me exige pix_settings quando "pix"
+  // é enviado em accepted_payment_methods. Mesmo sem customizações, o objeto
+  // precisa existir para que o link de pagamento Pix seja criado.
+  if (isPix) {
+    paymentSettings.pix_settings = {};
+  }
   if (isCard) {
     paymentSettings.credit_card_settings = {
       operation_type: "auth_and_capture",
@@ -1102,8 +1129,8 @@ async function createPagarmePaymentLink(order) {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data?.url || !data?.id) {
-      const message = data?.message || data?.errors?.[0]?.message || data?.errors?.[0] || data?.error || `HTTP ${response.status}`;
-      console.error("Pagar.me: falha ao criar checkout", { status: response.status, orderNumber: order.number, error: message });
+      const message = pagarmeErrorMessage(data, `HTTP ${response.status}`);
+      console.error("Pagar.me: falha ao criar checkout", { status: response.status, orderNumber: order.number, paymentMethod: isPix ? "pix" : "credit_card", error: message });
       throw new Error(`Não foi possível abrir o pagamento online (${String(message).slice(0, 180)}).`);
     }
     console.log("Pagar.me: checkout criado", { orderNumber: order.number, paymentLinkId: data.id, test: PAGARME_TEST_MODE });
@@ -3611,7 +3638,7 @@ app.post("/api/site/orders", async (req, res) => {
 });
 
 
-app.get("/", (_req, res) => res.status(200).send("Webhook da MR Pizzaria está online — versão 6.4.2."));
+app.get("/", (_req, res) => res.status(200).send("Webhook da MR Pizzaria está online — versão 6.4.3."));
 
 app.get("/api/site/orders/:number/payment-status", async (req, res) => {
   try {
@@ -3653,7 +3680,7 @@ app.get("/api/site/orders/:number/payment-events", async (req, res) => {
 app.get("/health", async (_req, res) => {
   try {
     const [orders, reservations, requests] = await Promise.all([listOrders({ limit: 1000 }), listReservations({ limit: 1000 }), listServiceRequests({ limit: 1000 })]);
-    res.json({ ok: true, version: "6.4.2", testMode: TEST_MODE, storage: storageMode(), sessions: sessions.size, orders: orders.length, reservations: reservations.length, serviceRequests: requests.length, pagarme: { enabled: PAGARME_ENABLED, environment: PAGARME_TEST_MODE ? "test" : "production", webhookProtected: Boolean(PAGARME_WEBHOOK_TOKEN) } });
+    res.json({ ok: true, version: "6.4.3", testMode: TEST_MODE, storage: storageMode(), sessions: sessions.size, orders: orders.length, reservations: reservations.length, serviceRequests: requests.length, pagarme: { enabled: PAGARME_ENABLED, environment: PAGARME_TEST_MODE ? "test" : "production", webhookProtected: Boolean(PAGARME_WEBHOOK_TOKEN) } });
   } catch (error) {
     res.status(500).json({ ok: false, storage: storageMode(), error: error.message });
   }
