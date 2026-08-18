@@ -1,15 +1,19 @@
 {
-  "name": "mr-pizzaria-delivery",
-  "version": "1.0.0",
+  "name": "mr-pizzaria-whatsapp-mesas",
+  "version": "6.4.1",
   "private": true,
-  "description": "Central de pedidos da MR Pizzaria com delivery, retirada, clientes e fila de impressão.",
+  "description": "Sistema da MR Pizzaria com WhatsApp, mesas, Pixel/CAPI e Pagar.me Checkout online (Pix e crédito 1x) v6.4.1",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "node --test"
+    "check": "node --check server.js"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.22.0",
+    "multer": "^2.0.2"
   }
 }

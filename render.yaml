@@ -1,19 +1,66 @@
 services:
   - type: web
-    name: mr-pizzaria-delivery
+    name: mr-pizzaria-webhook
     runtime: node
-    plan: free
-    buildCommand: node --check server.js
+    buildCommand: npm install
     startCommand: npm start
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATA_FILE
-        value: ./data/mr-delivery.json
-      - key: ADMIN_API_KEY
-        generateValue: true
+      - key: VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: PHONE_NUMBER_ID
+        sync: false
+      - key: GRAPH_API_VERSION
+        value: v25.0
+      - key: TEST_MODE
+        value: "true"
+      - key: STORE_TIMEZONE
+        value: America/Sao_Paulo
+      - key: ADMIN_KEY
+        sync: false
       - key: PRINT_API_KEY
-        generateValue: true
-      - key: WHATSAPP_INTERNAL_KEY
-        generateValue: true
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: TODAY_PROMOTION
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: WHATSAPP_GROUP_URL
+        sync: false
+      - key: META_PIXEL_ID
+        sync: false
+      - key: META_CAPI_ACCESS_TOKEN
+        sync: false
+      - key: META_CAPI_TEST_EVENT_CODE
+        sync: false
+      - key: META_GRAPH_API_VERSION
+        value: v25.0
+      - key: PAGARME_SECRET_KEY
+        sync: false
+      - key: PAGARME_BASE_URL
+        value: https://sdx-api.pagar.me/core/v5
+      - key: PAGARME_ENV
+        value: test
+      - key: PAGARME_PAYMENT_LINK_EXPIRES_MINUTES
+        value: "30"
+      - key: PAGARME_WEBHOOK_TOKEN
+        sync: false
+      - key: ABANDONED_CART_MIN_AGE_MINUTES
+        value: "10"
+      - key: ABANDONED_CART_RETENTION_DAYS
+        value: "30"
+      - key: COUPON_CODE
+        sync: false
+      - key: COUPON_PERCENT
+        value: "0"
+      - key: SCHEDULE_PRINT_LEAD_MINUTES
+        value: "60"
+      - key: ORDER_ADVANCE_DAYS
+        value: "30"
+      - key: RESERVATION_ADVANCE_DAYS
+        value: "60"
+      - key: RESERVATION_MAX_PEOPLE
+        value: "30"

@@ -1,0 +1,105 @@
+MR Pizzaria v6.3.0 — testes locais
+
+- node --check server.js: aprovado
+- pizza Strogonoff de frango removida: aprovado
+- pizzas doces usam os preços tradicionais: aprovado
+- Coca-Cola e Coca-Cola Zero em R$ 6,00: aprovado
+- Petit gâteau em R$ 18,00: aprovado
+- X-Bacon salada, X-Frango, X-Egg e X-Calabresa cadastrados: aprovado
+- pizzas Brigadeiro, Sensação, Romeu e Julieta e Beijinho removidas: aprovado
+- granulado removido das pizzas doces restantes: aprovado
+- novos drinks e porções mantidos: aprovado
+- Esqueci Meu CPF inclui vodka nos ingredientes: aprovado
+- PDF atualizado com 8 páginas: aprovado
+- PDF renderizado sem falha: aprovado
+
+Observação: envio real pelo WhatsApp e impressão dependem das credenciais e do deploy no Render.
+
+- Produto Costelinha barbecue cadastrado em Porções por R$ 149,90, com acompanhamento de arroz.
+
+
+TESTES v6.3.0
+- Sintaxe do server.js validada com node --check.
+- Área de combos cadastrável pelo painel e catálogo público.
+- Preço do combo é validado novamente no servidor ao fechar o pedido.
+- Meta Pixel fica desativado sem META_PIXEL_ID e é carregado somente após consentimento quando configurado.
+
+
+v6.3.1: testes de recuperação de carrinho, persistência local e consentimento do Pixel no checkout.
+
+Validação v6.3.1 executada em 14/08/2026:
+- node --check server.js: OK
+- JavaScript do site extraído e validado com node --check: OK
+- Pop-up "Medição de anúncios" removido do HTML: OK
+- Checkbox de lembrete do carrinho no checkout: OK
+- Checkbox de medição Meta no checkout: OK
+- Endpoint /api/site/abandoned-cart presente: OK
+- Painel /admin/recuperacao presente: OK
+- Tabela mr_abandoned_carts e retenção automática: OK
+
+Validação v6.3.2 executada em 14/08/2026:
+- node --check server.js: OK
+- JavaScript da página /comprar extraído e validado com node --check: OK
+- formulário de combos usa multipart/form-data e aceita foto JPG/PNG/WEBP até 5 MB
+- rota pública /combo/:id/imagem implementada
+- menu administrativo inclui Relatórios
+- rota /admin/relatorios com filtros Hoje / 7 dias / 30 dias / período personalizado
+- limpeza de vendas de teste protegida por TEST_MODE=true e confirmação "ZERAR VENDAS"
+
+
+Validação v6.3.3 executada em 14/08/2026:
+- Campo de tamanho isolado em uma linha.
+- Conteúdo de sabores oculto até selecionar o tamanho.
+- Pequena limitada a 1 sabor.
+- Média/grande com seletor 1 sabor ou 2 sabores.
+- Dois sabores exibidos lado a lado com opção inicial Nenhum.
+- Validação para tamanho, primeiro sabor, segundo sabor quando solicitado e sabores repetidos.
+
+
+Validação v6.3.5 executada em 14/08/2026:
+- Checkbox recoveryOptIn inicia sem atributo checked.
+- Após concluir pedido, recoveryOptIn volta para false.
+- Após pedido concluído, recoveryOptIn permanece marcado para o próximo pedido.
+- Sintaxe do server.js validada com node --check.
+
+
+Validação v6.3.6 executada em 14/08/2026:
+- checkout separado em etapa 1 (dados) e etapa 2 (pagamento)
+- pedido somente é POSTado depois da escolha da forma de pagamento
+- opções públicas: crédito, débito, Pix e dinheiro
+- Conta da mesa preservada para consumo local/garçom
+- pagamento informado como local, sem cobrança online nesta versão
+- botão de acompanhamento pelo WhatsApp após confirmação
+- status do painel usa telefone normalizado, mostra sucesso/falha e possui fallback opcional por template
+
+v6.4.0 — Meta Conversions API
+- Node syntax check do server.js.
+- CAPI permanece desativada com segurança quando META_CAPI_ACCESS_TOKEN está vazio.
+- Endpoint /api/meta/capi/status não expõe o token.
+- Eventos aceitos: PageView, ViewContent, AddToCart, InitiateCheckout e Purchase.
+- Deduplicação preparada com o mesmo event_id no Pixel e na CAPI.
+- Purchase do servidor ocorre somente após salvar o pedido.
+- Dados de correspondência incluem IP, User-Agent, fbp/fbc quando disponíveis e telefone/nome com SHA-256 quando informados.
+- META_CAPI_TEST_EVENT_CODE é opcional e deve ser removido após o teste.
+
+- Pagar.me Checkout: implementação adicionada com autenticação Basic, User-Agent obrigatório, link pontual type=order, expiração e max_paid_sessions=1.
+- Pedidos online aguardam pagamento e ficam fora da fila de impressão.
+- Webhook Pagar.me implementado com idempotência para order.paid e proteção opcional por token na URL.
+
+
+Validação v6.4.0 — Pagar.me Checkout (18/08/2026):
+- node --check server.js: OK.
+- JavaScript da página /comprar extraído e validado com node --check: OK.
+- INSERT de mr_orders validado: 31 colunas / 31 parâmetros: OK.
+- Pix online e Cartão de crédito online (1x) aparecem separados de pagamento no local: OK.
+- Checkout usa POST /paymentlinks, Basic Auth e User-Agent pagarme-skill-generated/1.0: OK.
+- Valores enviados em centavos, expires_in configurável e max_paid_sessions=1: OK.
+- Pedido online inicia como Aguardando pagamento e não imprime antes de payment_status=paid: OK.
+- Relatórios não contam pedidos Pagar.me ainda não pagos: OK.
+- Webhook trata order.paid, order.payment_failed, order.canceled, checkout.canceled e charge.refunded: OK.
+- Correlação do webhook aceita apenas código próprio MR-<numero>; códigos internos numéricos do Pagar.me não são tratados como número do pedido: OK.
+- Payment link ID é armazenado no banco; fallback de correlação por pl_... disponível quando o webhook trouxer esse identificador: OK.
+- Purchase da Meta para pagamento online só é emitido depois da confirmação e fica desativado para pagamentos simulados do Pagar.me: OK.
+- Teste real contra a API Pagar.me e recebimento real de webhook dependem da sk_test_ configurada no Render e do deploy; não foram executados dentro do ambiente local.
+
+[v6.4.1] Retorno Pagar.me: popup/tab separado + polling de status protegido pelo paymentLinkId.
