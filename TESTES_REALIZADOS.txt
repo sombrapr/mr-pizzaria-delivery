@@ -102,4 +102,4 @@ Validação v6.4.0 — Pagar.me Checkout (18/08/2026):
 - Purchase da Meta para pagamento online só é emitido depois da confirmação e fica desativado para pagamentos simulados do Pagar.me: OK.
 - Teste real contra a API Pagar.me e recebimento real de webhook dependem da sk_test_ configurada no Render e do deploy; não foram executados dentro do ambiente local.
 
-[v6.4.1] Retorno Pagar.me: popup/tab separado + polling de status protegido pelo paymentLinkId.
+[v6.4.2] Retorno Pagar.me: popup/tab separado + polling de status protegido pelo paymentLinkId.

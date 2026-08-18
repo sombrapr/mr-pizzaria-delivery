@@ -1,8 +1,8 @@
-# MR Pizzaria — WhatsApp + Mesas v6.4.1
+# MR Pizzaria — WhatsApp + Mesas v6.4.2
 
 Sistema integrado para atendimento por WhatsApp, pedidos pelo site e atendimento no salão.
 
-## v6.4.1 — retorno automático após pagamento Pagar.me
+## v6.4.2 — retorno automático após pagamento Pagar.me
 
 - O Checkout Pagar.me abre em uma nova janela/aba, mantendo o site da MR Pizzaria aberto.
 - Enquanto o cliente paga, o site consulta o status do pedido a cada 2 segundos.
@@ -245,3 +245,10 @@ Use somente no ambiente de teste do Pagar.me. A documentação oficial informa:
 - CVV: 3 dígitos quaisquer; validade: data futura.
 
 Antes da produção, troque a Secret Key e a base URL para produção e mantenha `PAGARME_WEBHOOK_TOKEN` configurado.
+
+
+## v6.4.2 — retorno do pagamento
+- O checkout continua hospedado no Pagar.me.
+- A tela da MR Pizzaria recebe a confirmação de pagamento em tempo real via Server-Sent Events (SSE), com polling como fallback.
+- Assim que o webhook marcar o pedido como pago, a aba/janela do checkout aberta pelo site é fechada pelo navegador quando permitido e a tela da pizzaria mostra “Pagamento aprovado”.
+- Se o navegador bloquear o fechamento automático, a aba original da MR Pizzaria já fica atualizada e pronta para o cliente retornar.
