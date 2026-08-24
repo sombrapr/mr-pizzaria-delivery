@@ -5,7 +5,7 @@
   "description": "Sistema da MR Pizzaria com WhatsApp, mesas, Pixel/CAPI e Pagar.me Checkout online (Pix e crédito 1x) v6.4.4",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node scripts/apply-menu-overrides.js && node server.js",
     "check": "node --check server.js"
   },
   "engines": {
